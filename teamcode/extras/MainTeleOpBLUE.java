@@ -48,7 +48,7 @@ public class MainTeleOpBLUE extends OpMode {
     private final Pose farBlueShoot = new Pose(56,10,Math.toRadians(114));
     private final Pose closeRedShoot = new Pose(85,85,Math.toRadians(39));
     private final Pose closeBlueShoot = new Pose(88,85,Math.toRadians(129));
-    private Pose pose = !close ? farBlueShoot : closeBlueShoot;
+    private Pose pose = (!close ? farBlueShoot : closeBlueShoot);
 
     //Stores the time running for further reference, eg telemetry
     private ElapsedTime runtime = null;
@@ -69,14 +69,14 @@ public class MainTeleOpBLUE extends OpMode {
         hardwareManager.init();
         this.flyWheelOn = false;
         this.ballsToShoot = 0;
-        this.hardwareManager.odometryInit();
+        this.hardwareManager.odometryInitBlue();
 
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startingPose == null ? new Pose() : startingPose);
         follower.update();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
 
-        pathChain = () -> follower.pathBuilder()
+         pathChain = () -> follower.pathBuilder()
                 .addPath(new Path(new BezierLine(follower::getPose, pose)))
                 .setHeadingInterpolation(HeadingInterpolator.linearFromPoint(follower::getHeading, pose.getHeading(), 0.8))
                 .build();
@@ -107,16 +107,19 @@ public class MainTeleOpBLUE extends OpMode {
         this.telemetry.addData("Status", "running for " + this.runtime.seconds() + " seconds");
         this.telemetry.addData("Info", "Main Iterative TeleOp V" + VERSION + "; H" + HardwareManagerNew.VERSION);
 
-        if (gamepad1.optionsWasPressed()){
-            drive = !drive;
-        }
+
        // if (gamepad1.dpadLeftWasPressed()) redAlliance = !redAlliance;
 
-        this.telemetry.addData("Drive Mode", drive ? "Standard" : "Field Relative");
+        this.telemetry.addData("Drive Mode", drive ? "Field Relative" : "Pedro");
         if (drive){
-            this.hardwareManager.driveFieldRelativeBlue(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
-        } if (!drive){
+            this.hardwareManager.driveFieldRelativeBlue(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x);
+        }
+        if (gamepad1.aWasPressed()){
             follower.followPath(pathChain.get());
+            drive = false;
+        }
+        if (!drive && (gamepad1.bWasPressed() || !follower.isBusy())) {
+            drive = true;
         }
 
         if (gamepad1.rightBumperWasPressed()) this.flyWheelOn = !this.flyWheelOn;
@@ -135,7 +138,7 @@ public class MainTeleOpBLUE extends OpMode {
         }
 
         if (gamepad1.dpadRightWasPressed()){
-            this.hardwareManager.resetOdo();
+            this.hardwareManager.resetOdoBlue();
         }
 
         boolean active = gamepad1.dpadUpWasPressed();
@@ -144,7 +147,7 @@ public class MainTeleOpBLUE extends OpMode {
 
         this.hardwareManager.setRobotPosition();
 
-        this.telemetry.addData("Alliance", redAlliance ? "blue" : "red");
+        this.telemetry.addData("Alliance", hardwareManager.getAlliance() ? "red" : "blue");
 
         this.hardwareManager.driveFieldRelative(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
         this.hardwareManager.axialLateralYaw(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
@@ -153,7 +156,6 @@ public class MainTeleOpBLUE extends OpMode {
         if (intake || outake) hardwareManager.intake(true, intake);
         else hardwareManager.intake(false);
         this.hardwareManager.cameraStream(active);
-        this.hardwareManager.getAlliance(redAlliance);
 
         this.hardwareManager.getBlockPos();
         this.hardwareManager.odometryTelemetry();

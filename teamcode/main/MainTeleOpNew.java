@@ -28,7 +28,6 @@ public class MainTeleOpNew extends OpMode {
     //Stores robot states
     private boolean flyWheelOn = false;
     private boolean close = false;
-    boolean redAlliance = true;
     private boolean drive = false;
 
 
@@ -66,6 +65,7 @@ public class MainTeleOpNew extends OpMode {
 
     @Override
     public void loop() {
+        hardwareManager.getAlliance();
         //Emergency break
         if (gamepad1.back) this.terminateOpModeNow();
 
@@ -76,7 +76,6 @@ public class MainTeleOpNew extends OpMode {
         if (gamepad1.optionsWasPressed()){
             drive = !drive;
         }
-        if (gamepad1.dpadLeftWasPressed()) redAlliance = !redAlliance;
 
         this.telemetry.addData("Drive Mode", drive ? "Standard" : "Field Relative");
         if (drive){
@@ -97,11 +96,14 @@ public class MainTeleOpNew extends OpMode {
         hardwareManager.manualShoot(gamepad1.right_trigger > 0.2);
 
         if (gamepad1.xWasPressed()){
-            this.hardwareManager.imuReset();
+            this.hardwareManager.odometryInitRed();
+        }
+        if (gamepad1.yWasPressed()){
+            this.hardwareManager.odometryInitBlue();
         }
 
         if (gamepad1.dpadRightWasPressed()){
-            this.hardwareManager.resetOdo();
+            this.hardwareManager.resetOdoRed();
         }
 
         boolean active = gamepad1.dpadUpWasPressed();
@@ -110,7 +112,7 @@ public class MainTeleOpNew extends OpMode {
 
         this.hardwareManager.setRobotPosition();
 
-        this.telemetry.addData("Alliance", redAlliance ? "blue" : "red");
+        this.telemetry.addData("Alliance", hardwareManager.getAlliance() ? "red" : "blue");
 
         this.hardwareManager.driveFieldRelative(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
         this.hardwareManager.axialLateralYaw(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
@@ -119,7 +121,6 @@ public class MainTeleOpNew extends OpMode {
         if (intake || outake) hardwareManager.intake(true, intake);
         else hardwareManager.intake(false);
         this.hardwareManager.cameraStream(active);
-        this.hardwareManager.getAlliance(redAlliance);
 
         this.hardwareManager.getBlockPos();
         this.hardwareManager.odometryTelemetry();

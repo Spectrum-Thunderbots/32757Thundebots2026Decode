@@ -69,8 +69,8 @@ public class MainAutoNew extends LinearOpMode {
         this.telemetry.addData("Mode", (this.redAlliance ? "Red" : "Blue") + "Alliance;" + (this.closePosition ? "Close" : "Far") + "Position;" + this.balls + " balls");
         this.telemetry.update();
 
-        this.hardwareManager.resetOdo();
-        this.hardwareManager.getAlliance(redAlliance);
+        this.hardwareManager.resetOdoRed();
+        this.hardwareManager.getAlliance();
 
         //telemetry.addData("Robot Angle", this.hardwareManager.getIMU(AngleUnit.DEGREES));
         this.telemetry.update();

@@ -84,8 +84,8 @@ public class MainAutoIMU extends LinearOpMode {
         this.telemetry.update();
 
 
-        this.hardwareManager.resetOdo();
-        this.hardwareManager.getAlliance(redAlliance);
+        this.hardwareManager.resetOdoRed();
+        this.hardwareManager.getAlliance();
         this.hardwareManager.getPosition(closePosition);
 
         // this.hardwareManager.cameraStream(true);

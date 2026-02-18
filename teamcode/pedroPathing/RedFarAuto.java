@@ -37,7 +37,6 @@ public class RedFarAuto extends OpMode {
     private Path Path1;
     private PathChain Path2, Path3, Path4, Path5, Path6, Path7, Path8;
     private boolean flyWheelOn;
-    private boolean close = false;
 
     public void buildPaths(){
         Path1 = new Path(new BezierLine(startPose, turnStart));
@@ -74,7 +73,7 @@ public class RedFarAuto extends OpMode {
     public void statePathUpd() {
         switch (pathState){
             case 0:
-                this.hardwareManager.fly(true, false);
+                this.autoAllShoot();
                 follower.followPath(Path1);
                 setPathState(1);
                 break;
@@ -93,7 +92,7 @@ public class RedFarAuto extends OpMode {
                 break;
             case 3:
                 if(!follower.isBusy()){
-                    this.hardwareManager.fly(true, false);
+                    this.autoAllShoot();
                     follower.followPath(Path4, true);
                     setPathState(4);
                 }
@@ -113,7 +112,7 @@ public class RedFarAuto extends OpMode {
                 break;
             case 6:
                 if(!follower.isBusy()){
-                    this.hardwareManager.fly(true, false);
+                    this.autoAllShoot();
                     follower.followPath(Path7, true);
                     setPathState(7);
                 }
@@ -160,7 +159,7 @@ public class RedFarAuto extends OpMode {
         telemetry.addData("Heading", follower.getPose().getHeading());
         telemetry.update();
         hardwareManager = new HardwareManagerNew(this);
-        this.hardwareManager.fly(this.flyWheelOn, close);
+        this.hardwareManager.fly(this.flyWheelOn, false);
     }
 
     private void autoShootImpl(){

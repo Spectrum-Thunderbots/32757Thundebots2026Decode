@@ -1,12 +1,10 @@
 package org.firstinspires.ftc.teamcode.main;
 
-import com.arcrobotics.ftclib.util.InterpLUT;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
@@ -20,7 +18,6 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDir
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
@@ -55,6 +52,9 @@ public class HardwareManagerNew {
     }
 
     //At the moment these values are simplified - subject to change
+
+    public boolean redAlliance = true;
+
     public final static double SHOOT_TIME = 750; //The time it usually takes to shoot a single artefact
     public final static double TIME_TO_REACTIVATE = 100; //The time it takes for the fly wheels to be able to shoot another bll after shooting
     public final static double TIME_TO_ACTIVATE = 1000; //The time it takes for the fly wheels to reach optimal speed
@@ -186,12 +186,6 @@ public class HardwareManagerNew {
 
         imu.initialize(new IMU.Parameters(RevOrientation));
 
-        //odometry.setHeading(getIMU(AngleUnit.DEGREES), AngleUnit.DEGREES);
-
-
-
-
-        //this.blinker = hardwareMap.get(RevBlinkinLedDriver.class, "blinker");
 
         this.frontLeftDrive.setDirection(DcMotor.Direction.REVERSE);
         this.frontRightDrive.setDirection(DcMotor.Direction.FORWARD);
@@ -230,17 +224,38 @@ public class HardwareManagerNew {
         initAprilTag();
     }
 
-    public void odometryInit(){
-        odometry.setOffsets(116.75, 108.675, DistanceUnit.MM);
+    public void odometryInitRed(){
+        odometry.setOffsets(116.75, 96.75, DistanceUnit.MM);
         odometry.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         odometry.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
-        odometry.resetPosAndIMU();
-        //imu.resetYaw();
+        odometry.recalibrateIMU();
+        odometry.setPosY(9, DistanceUnit.INCH);
+        odometry.setPosX(9, DistanceUnit.INCH);
+        imu.resetYaw();
     }
 
-    public void resetOdo(){
-        odometry.resetPosAndIMU();
-        //imu.resetYaw();
+    public void odometryInitBlue(){
+        odometry.setOffsets(116.75, 96.75, DistanceUnit.MM);
+        odometry.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        odometry.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        odometry.recalibrateIMU();
+        odometry.setPosY(9, DistanceUnit.INCH);
+        odometry.setPosX(135, DistanceUnit.INCH);
+        imu.resetYaw();
+    }
+
+    public void resetOdoRed(){
+        odometry.recalibrateIMU();
+        odometry.setPosY(9, DistanceUnit.INCH);
+        odometry.setPosX(9, DistanceUnit.INCH);
+        imu.resetYaw();
+    }
+
+    public void resetOdoBlue(){
+        odometry.recalibrateIMU();
+        odometry.setPosY(9, DistanceUnit.INCH);
+        odometry.setPosX(135, DistanceUnit.INCH);
+        imu.resetYaw();
     }
 
 
@@ -330,7 +345,7 @@ public class HardwareManagerNew {
         double newForward = r * Math.sin(theta);
         double newRight = r * Math.cos(theta);
 
-        axialLateralYaw(newForward * -1, newRight * -1, yaw);
+        axialLateralYaw(newForward, newRight, yaw);
     }
 
     public void driveTelemetry(){
@@ -473,11 +488,8 @@ public class HardwareManagerNew {
         this.blink(active ? RevBlinkinLedDriver.BlinkinPattern.RED : RevBlinkinLedDriver.BlinkinPattern.GREEN);
     }
 
-    double distance;
-    double velocity;
 
-
-    public void positionFly(boolean active, double currentPos){
+    public void positionFly(boolean active){
         this.allInitCheck();
 
         this.fly = active;
@@ -485,7 +497,13 @@ public class HardwareManagerNew {
         double actualVelocity = this.flyMotor.getVelocity();
         this.updateTelemetry("Fly Wheel Velocity", Double.toString(actualVelocity));
 
-        double positionVelocity = (0.0153 * currentPos) + (11.9 * currentPos) + 974.8;
+
+
+        double red = Math.hypot(odometry.getPosX(DistanceUnit.INCH) - 128, odometry.getPosY(DistanceUnit.INCH) - 129);
+        double blue = Math.hypot(odometry.getPosX(DistanceUnit.INCH) - 128, odometry.getPosY(DistanceUnit.INCH) - 14);
+
+        double distance = redAlliance ? red : blue;
+        double positionVelocity = (-0.0153 * Math.pow(distance, 2)) + (11.9 * distance) + 974.8;
 
         double targetPower = active ? computeFlyTargetPower(positionVelocity, actualVelocity) : 0;
 
@@ -546,8 +564,8 @@ public class HardwareManagerNew {
     public boolean getPosition(boolean close){
         return close;
     }
-    public boolean getAlliance(boolean redAlliance){
-        return redAlliance;
+    public boolean getAlliance(){
+        return this.redAlliance;
     }
 
     public void IMUTELEMETRY(){

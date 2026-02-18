@@ -27,9 +27,11 @@ public class Constants {
             .rightRearMotorDirection(DcMotor.Direction.FORWARD);
 
 
+
     public static PinpointConstants localizerConstants = new PinpointConstants()
+            .hardwareMapName("odometry")
             .forwardPodY(116.75)
-            .strafePodX(108.675)
+            .strafePodX(96.75)
             .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD);
 
