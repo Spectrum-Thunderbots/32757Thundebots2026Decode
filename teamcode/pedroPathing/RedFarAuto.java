@@ -22,21 +22,40 @@ public class RedFarAuto extends OpMode {
     public Follower follower; // Pedro Pathing follower instance
     private Timer pathTimer, opModeTimer; // Timer for the autonomous path
     private int pathState; // Current autonomous path state (state machine)
+    private RedFarAuto.ALLIANCE currentAlliance = RedFarAuto.ALLIANCE.RED;
+     private enum ALLIANCE{
+        RED,
+        BLUE
+    }
     // poses
-    private final Pose startPose = new Pose(88, 10, Math.toRadians(90));
-    private final Pose turnStart = new Pose(89, 10, Math.toRadians(69));
-    private final Pose readyPickup1 = new Pose(104, 36, Math.toRadians(180));
-    private final Pose pickup1 = new Pose(135, 36, Math.toRadians(180));
-    private final Pose shootReturn1 = new Pose(88, 10, Math.toRadians(69));
-    private final Pose readyPickup2 = new Pose(135, 24, Math.toRadians(90));
-    private final Pose pickup2 = new Pose(135, 24, Math.toRadians(90));
-    private final Pose shootReturn2 = new Pose(88, 10, Math.toRadians(69));
-    private final Pose leaveEnd = new Pose(110, 10, Math.toRadians(90));
+    private  Pose startPose = new Pose(88, 10, Math.toRadians(90));
+    private  Pose turnStart = new Pose(89, 10, Math.toRadians(69));
+    private  Pose readyPickup1 = new Pose(104, 36, Math.toRadians(180));
+    private  Pose pickup1 = new Pose(135, 36, Math.toRadians(180));
+    private  Pose shootReturn1 = new Pose(88, 10, Math.toRadians(69));
+    private  Pose readyPickup2 = new Pose(135, 24, Math.toRadians(90));
+    private  Pose pickup2 = new Pose(135, 24, Math.toRadians(90));
+    private  Pose shootReturn2 = new Pose(88, 10, Math.toRadians(69));
+    private  Pose leaveEnd = new Pose(110, 10, Math.toRadians(90));
 
     // path chain
     private Path Path1;
     private PathChain Path2, Path3, Path4, Path5, Path6, Path7, Path8;
     private boolean flyWheelOn;
+
+    private void Alliance(ALLIANCE alliance){
+        if(alliance == RedFarAuto.ALLIANCE.BLUE){
+            startPose = startPose.mirror();
+            turnStart = turnStart.mirror();
+            readyPickup1 = readyPickup2.mirror();
+            pickup1 = pickup1.mirror();
+            shootReturn1 = shootReturn1.mirror();
+            readyPickup2 = readyPickup2.mirror();
+            pickup2 = pickup2.mirror();
+            shootReturn2 = shootReturn2.mirror();
+            leaveEnd = leaveEnd.mirror();
+        }
+    }
 
     public void buildPaths(){
         Path1 = new Path(new BezierLine(startPose, turnStart));
@@ -73,18 +92,18 @@ public class RedFarAuto extends OpMode {
     public void statePathUpd() {
         switch (pathState){
             case 0:
-                this.autoAllShoot();
                 follower.followPath(Path1);
                 setPathState(1);
                 break;
             case 1:
+                this.autoAllShoot();
                 if (!follower.isBusy()){
-                    this.autoAllShoot();
                     follower.followPath(Path2, true);
                     setPathState(2);
                 }
                 break;
             case 2:
+                this.hardwareManager.intake(true);
                 if (!follower.isBusy()){
                     follower.followPath(Path3, true);
                     setPathState(3);
@@ -92,34 +111,33 @@ public class RedFarAuto extends OpMode {
                 break;
             case 3:
                 if(!follower.isBusy()){
-                    this.autoAllShoot();
                     follower.followPath(Path4, true);
                     setPathState(4);
                 }
                 break;
             case 4:
+                this.autoAllShoot();
                 if(!follower.isBusy()){
-                    this.autoAllShoot();
                     follower.followPath(Path5, true);
                     setPathState(5);
                 }
                 break;
             case 5:
+                this.hardwareManager.intake(true);
                 if(!follower.isBusy()){
                     follower.followPath(Path6, true);
                     setPathState(6);
                 }
                 break;
             case 6:
+                this.autoAllShoot();
                 if(!follower.isBusy()){
-                    this.autoAllShoot();
                     follower.followPath(Path7, true);
                     setPathState(7);
                 }
                 break;
             case 7:
                 if (!follower.isBusy()){
-                    this.autoAllShoot();
                     follower.followPath(Path8, true);
                     setPathState(8);
                 }
@@ -135,6 +153,15 @@ public class RedFarAuto extends OpMode {
     }
     @Override
     public void init() {
+        if(gamepad1.dpad_right){
+            if(currentAlliance == RedFarAuto.ALLIANCE.RED){
+                currentAlliance = RedFarAuto.ALLIANCE.BLUE;
+                Alliance(currentAlliance);
+            }else{
+                currentAlliance = RedFarAuto.ALLIANCE.RED;
+                Alliance(currentAlliance);
+            }
+        }
         pathTimer = new Timer();
         opModeTimer = new Timer();
         opModeTimer.resetTimer();
@@ -142,6 +169,8 @@ public class RedFarAuto extends OpMode {
         follower.setStartingPose(startPose);
         buildPaths();
         telemetry.addData("Status", "Initialized");
+        hardwareManager = new HardwareManagerNew(this);
+        this.hardwareManager.init();
     }
     @Override
     public void start(){
@@ -150,15 +179,14 @@ public class RedFarAuto extends OpMode {
     }
     @Override
     public void loop() {
-        follower.update(); // Update Pedro Pathing
-        // Log values to Panels and Driver Station
+        follower.update();
         statePathUpd();
+        telemetry.addData("Alliance", currentAlliance);
         telemetry.addData("Path State", pathState);
         telemetry.addData("X", follower.getPose().getX());
         telemetry.addData("Y", follower.getPose().getY());
         telemetry.addData("Heading", follower.getPose().getHeading());
         telemetry.update();
-        hardwareManager = new HardwareManagerNew(this);
         this.hardwareManager.fly(this.flyWheelOn, false);
     }
 

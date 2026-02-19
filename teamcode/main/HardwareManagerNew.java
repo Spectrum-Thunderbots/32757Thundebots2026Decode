@@ -53,7 +53,6 @@ public class HardwareManagerNew {
 
     //At the moment these values are simplified - subject to change
 
-    public boolean redAlliance = true;
 
     public final static double SHOOT_TIME = 750; //The time it usually takes to shoot a single artefact
     public final static double TIME_TO_REACTIVATE = 100; //The time it takes for the fly wheels to be able to shoot another bll after shooting
@@ -222,6 +221,7 @@ public class HardwareManagerNew {
         this.initMode = Mode.ALL;
 
         initAprilTag();
+        odometryInitRed();
     }
 
     public void odometryInitRed(){
@@ -260,9 +260,9 @@ public class HardwareManagerNew {
 
 
     public void odometryTelemetry(){
-        String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", odometry.getPosX(DistanceUnit.MM), odometry.getPosY(DistanceUnit.MM), odometry.getHeading(AngleUnit.DEGREES));
+        String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", odometry.getPosX(DistanceUnit.INCH), odometry.getPosY(DistanceUnit.INCH), odometry.getHeading(AngleUnit.DEGREES));
         telemetry.addData("Position", data);
-        String velocity = String.format(Locale.US,"{XVel: %.3f, YVel: %.3f, HVel: %.3f}", odometry.getVelX(DistanceUnit.MM), odometry.getVelY(DistanceUnit.MM), odometry.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES));
+        String velocity = String.format(Locale.US,"{XVel: %.3f, YVel: %.3f, HVel: %.3f}", odometry.getVelX(DistanceUnit.INCH), odometry.getVelY(DistanceUnit.INCH), odometry.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES));
         telemetry.addData("Velocity", velocity);
     }
 
@@ -499,16 +499,17 @@ public class HardwareManagerNew {
 
 
 
-        double red = Math.hypot(odometry.getPosX(DistanceUnit.INCH) - 128, odometry.getPosY(DistanceUnit.INCH) - 129);
-        double blue = Math.hypot(odometry.getPosX(DistanceUnit.INCH) - 128, odometry.getPosY(DistanceUnit.INCH) - 14);
+        double red = Math.hypot(128 - odometry.getPosX(DistanceUnit.INCH), 128 - odometry.getPosY(DistanceUnit.INCH));
+        double blue = Math.hypot(128 - odometry.getPosX(DistanceUnit.INCH), 14 - odometry.getPosY(DistanceUnit.INCH));
 
-        double distance = redAlliance ? red : blue;
+        double distance = getAlliance(true) ? red : blue;
         double positionVelocity = (-0.0153 * Math.pow(distance, 2)) + (11.9 * distance) + 974.8;
 
         double targetPower = active ? computeFlyTargetPower(positionVelocity, actualVelocity) : 0;
 
         this.flyMotor.setPower(targetPower);
 
+        this.updateTelemetry("wanted velo", String.valueOf(positionVelocity));
         this.updateTelemetry("Fly Power", Double.toString(this.flyMotor.getPower()));
     }
 
@@ -564,8 +565,8 @@ public class HardwareManagerNew {
     public boolean getPosition(boolean close){
         return close;
     }
-    public boolean getAlliance(){
-        return this.redAlliance;
+    public boolean getAlliance(boolean redAlliance){
+        return redAlliance;
     }
 
     public void IMUTELEMETRY(){

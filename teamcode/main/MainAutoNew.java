@@ -70,7 +70,7 @@ public class MainAutoNew extends LinearOpMode {
         this.telemetry.update();
 
         this.hardwareManager.resetOdoRed();
-        this.hardwareManager.getAlliance();
+        this.hardwareManager.getAlliance(redAlliance);
 
         //telemetry.addData("Robot Angle", this.hardwareManager.getIMU(AngleUnit.DEGREES));
         this.telemetry.update();

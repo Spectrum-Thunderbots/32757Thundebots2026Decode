@@ -147,7 +147,7 @@ public class MainTeleOpBLUE extends OpMode {
 
         this.hardwareManager.setRobotPosition();
 
-        this.telemetry.addData("Alliance", hardwareManager.getAlliance() ? "red" : "blue");
+        this.telemetry.addData("Alliance", hardwareManager.getAlliance(true) ? "red" : "blue");
 
         this.hardwareManager.driveFieldRelative(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
         this.hardwareManager.axialLateralYaw(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
