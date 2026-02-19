@@ -104,8 +104,6 @@ public class HardwareManagerNew {
     private Servo blockShootServo = null;
 
 
-    //private RevBlinkinLedDriver blinker = null;
-
     private void updateTelemetry(String caption, String info){
         if (this.telemetry == null) return;
         this.telemetry.addData(caption, info);
@@ -116,11 +114,6 @@ public class HardwareManagerNew {
         this.telemetry.addData(">", info);
     }
 
-    private void blink(RevBlinkinLedDriver.BlinkinPattern pattern){
-        this.allInitCheck();
-        if (pattern == null) throw new IllegalArgumentException("Pattern must be specified!");
-        //this.blinker.setPattern(pattern);
-    }
 
     //TODO: Make sure all methods use this
     private void allInitCheck() {
@@ -132,15 +125,6 @@ public class HardwareManagerNew {
             value = min;
         } if (value > max){
             value = max;
-        }
-        return value;
-    }
-
-    public double rangeCheckAngle(double value, double min, double max){
-        while (value <= min){
-            value += 360;
-        } while (value > max){
-            value -= 360;
         }
         return value;
     }
@@ -229,18 +213,6 @@ public class HardwareManagerNew {
         odometry.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         odometry.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
         odometry.recalibrateIMU();
-        odometry.setPosY(9, DistanceUnit.INCH);
-        odometry.setPosX(9, DistanceUnit.INCH);
-        imu.resetYaw();
-    }
-
-    public void odometryInitBlue(){
-        odometry.setOffsets(116.75, 96.75, DistanceUnit.MM);
-        odometry.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-        odometry.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
-        odometry.recalibrateIMU();
-        odometry.setPosY(9, DistanceUnit.INCH);
-        odometry.setPosX(135, DistanceUnit.INCH);
         imu.resetYaw();
     }
 
@@ -252,7 +224,7 @@ public class HardwareManagerNew {
     }
 
     public void resetOdoBlue(){
-        odometry.recalibrateIMU();
+        odometry.setHeading(180, AngleUnit.DEGREES);
         odometry.setPosY(9, DistanceUnit.INCH);
         odometry.setPosX(135, DistanceUnit.INCH);
         imu.resetYaw();
@@ -324,23 +296,6 @@ public class HardwareManagerNew {
 
         theta = AngleUnit.normalizeRadians(theta -
                 imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
-
-        double newForward = r * Math.sin(theta);
-        double newRight = r * Math.cos(theta);
-
-        axialLateralYaw(newForward, newRight, yaw);
-    }
-
-    public void imuReset(){
-        imu.resetYaw();
-    }
-
-    public void driveFieldRelativeBlue(double axial, double lateral, double yaw) {
-        double theta = Math.atan2(axial, lateral);
-        double r = Math.hypot(lateral, axial);
-
-        theta = AngleUnit.normalizeRadians(theta -
-                odometry.getHeading(AngleUnit.RADIANS));
 
         double newForward = r * Math.sin(theta);
         double newRight = r * Math.cos(theta);
@@ -485,11 +440,10 @@ public class HardwareManagerNew {
         this.flyMotor.setPower(targetPower);
 
         this.updateTelemetry("Fly Power", Double.toString(this.flyMotor.getPower()));
-        this.blink(active ? RevBlinkinLedDriver.BlinkinPattern.RED : RevBlinkinLedDriver.BlinkinPattern.GREEN);
     }
 
 
-    public void positionFly(boolean active){
+    public void positionFly(boolean active, boolean redAlliance){
         this.allInitCheck();
 
         this.fly = active;
@@ -502,7 +456,7 @@ public class HardwareManagerNew {
         double red = Math.hypot(128 - odometry.getPosX(DistanceUnit.INCH), 128 - odometry.getPosY(DistanceUnit.INCH));
         double blue = Math.hypot(128 - odometry.getPosX(DistanceUnit.INCH), 14 - odometry.getPosY(DistanceUnit.INCH));
 
-        double distance = getAlliance(true) ? red : blue;
+        double distance = redAlliance ? red : blue;
         double positionVelocity = (-0.0153 * Math.pow(distance, 2)) + (11.9 * distance) + 974.8;
 
         double targetPower = active ? computeFlyTargetPower(positionVelocity, actualVelocity) : 0;
@@ -513,7 +467,7 @@ public class HardwareManagerNew {
         this.updateTelemetry("Fly Power", Double.toString(this.flyMotor.getPower()));
     }
 
-    private static double computeFlyTargetPower(double targetVelocity, double actualVelocity) {
+    public static double computeFlyTargetPower(double targetVelocity, double actualVelocity) {
         double f = 0.000424;
         double p = 0.000365;
 
@@ -561,21 +515,10 @@ public class HardwareManagerNew {
         double Yaw = robotOrientation.getYaw(AngleUnit.DEGREES);
         return Yaw;
     }
-
-    public boolean getPosition(boolean close){
-        return close;
-    }
     public boolean getAlliance(boolean redAlliance){
         return redAlliance;
     }
 
-    public void IMUTELEMETRY(){
-        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-
-        telemetry.addData("Yaw (Z)", "%.2f Deg. (Heading)", orientation.getYaw(AngleUnit.DEGREES));
-        telemetry.addData("Pitch (X)", "%.2f Deg.", orientation.getPitch(AngleUnit.DEGREES));
-        telemetry.addData("Roll (Y)", "%.2f Deg.\n", orientation.getRoll(AngleUnit.DEGREES));
-    }
 
     private final Position cameraPosition = new Position(DistanceUnit.MM,
             0, 139.84486, 156.630, 0);
@@ -590,7 +533,6 @@ public class HardwareManagerNew {
     public void cameraStream(boolean active) {
         if (active) visionPortal.resumeStreaming();
         else visionPortal.stopStreaming();
-
         telemetry.addData("Camera", active ? "On" : "Off" );
     }
 
